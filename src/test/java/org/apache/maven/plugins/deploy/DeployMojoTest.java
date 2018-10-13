@@ -32,6 +32,7 @@ import java.util.Properties;
 import org.apache.maven.artifact.repository.ArtifactRepository;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.plugin.testing.stubs.MavenProjectStub;
 import org.apache.maven.plugins.deploy.stubs.ArtifactDeployerStub;
@@ -43,6 +44,7 @@ import org.apache.maven.repository.internal.MavenRepositorySystemSession;
 import org.apache.maven.shared.transfer.project.deploy.ProjectDeployerRequest;
 import org.codehaus.plexus.util.FileUtils;
 import org.junit.Ignore;
+import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -589,7 +591,34 @@ public class DeployMojoTest
         assertEquals( repository,
                       mojo.getDeploymentRepository( pdr ));
     }
+
+
     
+    public void testWrongOldRepositoryformatForDeploymentRepository()
+        throws MojoExecutionException, MojoFailureException
+    {
+        DeployMojo mojo = spy( new DeployMojo() );
+
+        ArtifactRepository repository = mock( ArtifactRepository.class );
+        when( mojo.createDeploymentArtifactRepository( "altReleaseDeploymentRepository",
+                                                       "http://localhost" ) ).thenReturn( repository );
+
+        project.setVersion( "1.0" );
+
+        ProjectDeployerRequest pdr =
+            new ProjectDeployerRequest().setProject( project ).setAltDeploymentRepository( "altDeploymentRepository::layout::http://localhost" );
+
+        try
+        {
+            mojo.getDeploymentRepository( pdr );
+            fail( "We have expected an MojoFailureException" );
+        }
+        catch ( MojoFailureException e )
+        {
+            // Intentionally empty.
+        }
+    }
+
     private void addFileToList( File file, List<String> fileList )
     {
         if( !file.isDirectory() )

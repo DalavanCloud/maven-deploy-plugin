@@ -92,7 +92,7 @@ ${project.name}
 
   []
 
-  As of Maven 3, snapshot artifacts will always be deployed using a timestamped version.
+  As of Maven 3, snapshot artifacts will always be deployed using a time stamped version.
 
 * Usage
 

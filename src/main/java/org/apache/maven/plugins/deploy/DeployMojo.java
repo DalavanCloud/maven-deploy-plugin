@@ -55,6 +55,8 @@ public class DeployMojo
 
     private static final Pattern ALT_REPO_SYNTAX_PATTERN = Pattern.compile( "(.+)::(.+)" );
 
+    private static final Pattern OLD_ALT_REPO_SYNTAX_PATTERN = Pattern.compile( "(.+)::(.+)::(.+)" );
+
     /**
      * When building with multiple threads, reaching the last project doesn't have to mean that all projects are ready
      * to be deployed
@@ -85,7 +87,6 @@ public class DeployMojo
     /**
      * Specifies an alternative repository to which the project artifacts should be deployed ( other than those
      * specified in &lt;distributionManagement&gt; ). <br/>
-     * Format: <code>id::url</code>
      * <dl>
      * <dt>id</dt>
      * <dd>The id can be used to pick up the correct credentials from the settings.xml</dd>
@@ -240,20 +241,24 @@ public class DeployMojo
         {
             getLog().info( "Using alternate deployment repository " + altDeploymentRepo );
 
-            Matcher matcher = ALT_REPO_SYNTAX_PATTERN.matcher( altDeploymentRepo );
+            if ( matchesOldSyntax( altDeploymentRepo ) )
+            {
+                throw new MojoFailureException( altDeploymentRepo,
+                                                "The syntax for the alternative repository has been changed.",
+                                                "Please use \"id::url\" instead of \"id::layout::url\"." );
+            }
 
+            Matcher matcher = ALT_REPO_SYNTAX_PATTERN.matcher( altDeploymentRepo );
             if ( !matcher.matches() )
             {
                 throw new MojoFailureException( altDeploymentRepo, "Invalid syntax for repository.",
                                                 "Invalid syntax for alternative repository. Use \"id::url\"." );
             }
-            else
-            {
-                String id = matcher.group( 1 ).trim();
-                String url = matcher.group( 2 ).trim();
 
-                repo = createDeploymentArtifactRepository( id, url );
-            }
+            String id = matcher.group( 1 ).trim();
+            String url = matcher.group( 2 ).trim();
+
+            repo = createDeploymentArtifactRepository( id, url );
         }
 
         if ( repo == null )
@@ -270,6 +275,11 @@ public class DeployMojo
         }
 
         return repo;
+    }
+
+    private boolean matchesOldSyntax( String repo )
+    {
+        return OLD_ALT_REPO_SYNTAX_PATTERN.matcher( repo ).matches();
     }
 
 }
